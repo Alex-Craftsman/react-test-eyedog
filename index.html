@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>ReactJS JSX &amp; Babel</title>
+    <link rel="stylesheet" href="css/app.css" type="text/css" />
+  </head>
+  <body>
+    <h1>Settings</h1>
+    <div id="container">If you can see this, React is not working right.</div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.4.1/react.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.4.1/react-dom.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.24/browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script type="text/babel">
+      'use strict';
+
+      var cc_url = 'https://www.web-temple.com/redis.php' ;
+
+      var settings = [
+        {
+          key:   'suspend',
+          text:  'Suspend',
+          value: 1,
+          items: null,
+        },
+        {
+          key:   'modules',
+          text:  'Modules',
+          value: null,
+          items: [
+            {
+              key:   'print_module',
+              text:  'Print Module',
+              value: 1,
+              items: null,
+            },
+            {
+              key:   'analytics_module',
+              text:  'Advanced Analytics Module',
+              value: 1,
+              items: null,
+            },
+            {
+              key:   'survey_module',
+              text:  'Client Survey',
+              value: 0,
+              items: null,
+            },
+            {
+              key:   'tours_module',
+              text:  'Tours Module',
+              value: 1,
+              items: null,
+            },
+            {
+              key:   'audio_module',
+              text:  'Audio',
+              value: 0,
+              items: null,
+            },
+          ],
+        },
+      ];
+
+      var Option = React.createClass({
+
+        getInitialState: function() { //устанавливаем начальное состояние (state)
+          return {
+            checked: this.props.data.value == 1,
+            key:     this.props.data.key,
+          };
+        },
+
+        onChange: function(e) {
+
+          var checked = !this.state.checked 
+
+          var self = this;
+
+          $.ajax({
+            url: cc_url,
+            dataType: 'jsonp',
+            data: {
+              key: this.props.data.key,
+              value: checked ? 1 : 0,
+            }, 
+            success: function(result,status,xhr){
+    
+              if(
+                result
+                && result.status == 0
+              ) {
+   
+                if(result.data.key == self.props.data.key) {
+
+                  checked = result.data.value == 1;  
+
+                }
+    
+              } else {
+    
+                console.error('Weird response from server') ;
+    
+              }
+    
+            },
+            error: function(xhr,status,error){
+    
+              var message = 'Error sending data from server: ' + error + "\n\nUsing default settings" ;
+    
+              console.error(message) ;
+    
+              //alert(message); // uncomment to warn user in browser
+    
+            },
+            complete: function(xhr,status) {
+   
+              self.setState({checked: checked}) ;
+ 
+            }
+          });
+
+        },
+
+        render: function() {
+
+          var data = this.props.data, optionsTemplate, checkboxTemplate;
+
+          if (
+            null != data.items 
+            && data.items.length > 0
+          ) {
+
+            optionsTemplate = <OptionsList data={data.items} ordered={false} /> ;
+
+          }
+
+          if(null != this.props.data.value) {
+
+            checkboxTemplate = <label className="ios7-switch">{this.props.data.text}<input type="checkbox" onChange={this.onChange} checked={this.state.checked} /><span /></label>
+
+          } else {
+
+            checkboxTemplate = <label>{this.props.data.text}</label>
+
+          }
+
+          return (
+            <div className="option-wrapper">
+              {checkboxTemplate}
+              {optionsTemplate}
+            </div>
+          )
+        }
+      });
+
+      var OptionsList = React.createClass({
+        render: function() {
+
+          var data = this.props.data, optionsTemplate;
+
+          if (data.length > 0) {
+
+            optionsTemplate = data.map(function(item, index) {
+              return (
+                  <li key={index}>
+                     <Option data={item} />
+                  </li>
+              )
+            });
+
+          }
+
+          if(this.props.ordered) {
+
+            return (
+              <ol className="ordered-options-wrapper options-wrapper">
+                {optionsTemplate}
+              </ol>
+            )
+
+          } else {
+
+            return (
+              <ul className="unordered-options-wrapper options-wrapper">
+                {optionsTemplate}
+              </ul>
+            )
+
+          }
+
+        }
+      });
+
+      var Loader = React.createClass({
+        render: function() {
+          return (
+            <div className="loader">
+              Loading..
+            </div>
+          )
+        }
+      });
+
+      ReactDOM.render(
+        <Loader />,
+        document.getElementById('container')
+      );
+
+      $.ajax({
+        url: cc_url,
+        dataType: 'jsonp', 
+        success: function(result,status,xhr){
+
+          if(
+            result
+            && result.status == 0
+          ) {
+
+            settings = result.data ;
+
+          } else {
+
+            console.error('Weird response from server') ;
+
+          }
+
+        },
+        error: function(xhr,status,error){
+
+          var message = 'Error retrieving data from server: ' + error + "\n\nUsing default settings" ;
+
+          console.error(message) ;
+
+          //alert(message); // uncomment to warn user in browser
+
+        },
+        complete: function(xhr,status) {
+
+          ReactDOM.render(
+            <OptionsList data={settings} ordered={true} />,
+            document.getElementById('container')
+          );
+
+        }
+      });
+
+    </script>
+  </body>
+</html>  
