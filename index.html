@@ -196,8 +196,9 @@
       var Loader = React.createClass({
         render: function() {
           return (
-            <div className="loader">
-              Loading..
+            <div className="loader-wrapper">
+              <strong>Loading settings data..</strong>
+              <div className="loader" />
             </div>
           )
         }
@@ -238,10 +239,12 @@
         },
         complete: function(xhr,status) {
 
+          /*
           ReactDOM.render(
             <OptionsList data={settings} ordered={true} />,
             document.getElementById('container')
           );
+          */
 
         }
       });
